@@ -8,6 +8,7 @@ import ChatLog from './ChatLog';
 import ActiveUsers from './ActiveUsers';
 import User from './User';
 import API from '../api';
+import FacebookLogin from 'react-facebook-login';
 
 
 var AppComponent = React.createClass({
@@ -99,8 +100,15 @@ var AppComponent = React.createClass({
     return(
       <div className="login-view">
         <a href="#">Login</a>
+        <FacebookLogin
+          appId='1030499273678445'
+          autoLoad={true}
+          callback={this.responseFacebook} />
         </div>
     )
+  },
+  responseFacebook: function(response) {
+    console.log(response);
   },
   render: function () {
     return (
@@ -108,7 +116,7 @@ var AppComponent = React.createClass({
         {this.state.isLoggedIn ? this.renderChat() : this.renderLogin() }
         </div>
     )
-  },
+  }
 });
 
 
