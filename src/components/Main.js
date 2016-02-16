@@ -5,104 +5,63 @@ import React from 'react';
 import ChatInput from './ChatInput';
 import ChatMessage from './ChatMessage';
 import ChatLog from './ChatLog';
-import User from './User';
 import ActiveUsers from './ActiveUsers';
-//var ChatInput = React.createClass({
-//
-//  onSubmit: function (event) {
-//    event.preventDefault();
-//    var body = "HELLOOO!";
-//    this.props.onSubmit(body);
-//  },
-//
-//  render: function () {
-//
-//    return (
-//      <div className="chat-input">
-//        <form onSubmit={this.onSubmit}>
-//          <input placeholder="type here..."/>
-//          <input type="submit"/>
-//        </form>
-//      </div>
-//    );
-//  }
-//});
+import User from './User';
 
-//var ChatMessage = React.createClass({
-//  getDefaultProps: function () {
-//    return {
-//      alignRight: false,
-//      delivered: true,
-//      body: '',
-//      user: {},
-//      date: '',
-//      id: ''
-//    }
-//  },
-//
-//  render: function () {
-//    var align = this.props.alignRight ? 'right' : 'left';
-//    var delivered = this.props.delivered ? '' : 'not-delivered';
-//    var user = this.props.user;
-//    return (
-//      <div className="chat-message">
-//        <div className={"align-" + align + ' ' + delivered}>
-//          <User firstName={user.first_name} lastName={user.last_name} />
-//          <div className="body">{this.props.body}</div>
-//          <div className="date">{this.props.date}</div>
-//        </div>
-//      </div>
-//    );
-//  }
-//});
+const API = {
+  base: 'http://192.168.1.114:9000/api/',
 
-//var ChatLog = React.createClass({
-//  render: function () {
-//    return (
-//      <div className="chat-log">
-//        {this.props.children}
-//      </div>
-//    );
-//  }
-//});
+  fetchUsers: function () {
+    var url = this.base + 'participants';
+    return fetch(url).then(function (response) {
+      return response.json()
+    });
+  },
 
-//var User = React.createClass({
-//
-//  render: function () {
-//    return (
-//      <span className="active-user">
-//        <span className="green-dot"/>
-//        <span>{this.props.firstName}</span> <span>{this.props.lastName}</span>
-//      </span>
-//    );
-//  }
-//});
-//
-//var ActiveUsers = React.createClass({
-//  getDefaultProps: function () {
-//    return {
-//      list: []
-//    }
-//  },
-//
-//  render: function () {
-//
-//    var activeUsers = this.props.list.map(function (user) {
-//      return (<User key={user.fb_id} firstName={user.first_name} lastName={user.last_name} />);
-//    })
-//
-//    return (
-//      <div className="active-users">
-//        {activeUsers}
-//      </div>
-//    );
-//  }
-//});
+  fetchUser: function (currentUser) {
+    var url = this.base + 'participants';
+    var attr = {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(currentUser)
+    };
+    return fetch(url, attr)
+      .then(function (response) {
+        return response.json();
+      });
+  },
+
+  fetchMessages: function (currentUser) {
+    var url = this.base + 'messages/' + currentUser.id;
+
+    return fetch(url).then(function (response) {
+      return response.json()
+    });
+  },
+
+  sendMessage: function (body, currentUser) {
+    var url = this.base + 'messages/' + currentUser.id;
+    var attr = {
+      method: 'post',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({body: body})
+    };
+
+    return fetch(url, attr)
+      .then(function (response) {
+        return response.json();
+      });
+  }
+};
 
 var AppComponent = React.createClass({
-
   getInitialState: function () {
-
     return {
       activeUsers: [],
 
@@ -111,66 +70,40 @@ var AppComponent = React.createClass({
       isLoggedIn: true,
 
       currentUser: {
-        fb_id: "1307233471",
-        first_name: "Vlad",
-        last_name: "Goran"
+        fb_id: '1307233471',
+        first_name: 'Vlad',
+        last_name: 'Goran'
       }
     }
   },
 
 
   fetchUsers: function () {
-    var url = 'http://server.godev.ro:8081/api/participants';
-    fetch(url).then(function(response) {
-      return response.json()
-    }).then(function(json) {
-      this.setState({
-        activeUsers: json
-      });
-    }.bind(this));
-  },
-
-  fetchUser: function () {
-    var url = "http://server.godev.ro:8081/api/participants";
-    return fetch(url,
-      {
-        method: 'post',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          fb_id: "1307233471",
-          first_name: "Vlad",
-          last_name: "Goran"
-        })
-      }
-    )
-      .then(function(response) {
-        return response.json();
-
-      }).then(function(json) {
+    API.fetchUsers()
+      .then(function (json) {
         this.setState({
-          currentUser: json
+          activeUsers: json
         });
       }.bind(this));
   },
 
+  fetchUser: function () {
+    return API.fetchUser(this.state.currentUser)
+      .then(function (json) {
+        this.setState({currentUser: json});
+      }.bind(this));
+  },
+
   fetchMessages: function () {
-    console.log('getting messages', this.state.currentUser);
-    var url = 'http://server.godev.ro:8081/api/messages/' + this.state.currentUser.id;
-    fetch(url).then(function(response) {
-      console.log('response',response);
-      return response.json()
-    }).then(function(json) {
-      this.setState({
-        messageLog: json
-      });
-    }.bind(this));
+    API.fetchMessages(this.state.currentUser)
+      .then(function (log) {
+        this.setState({
+          messageLog: log
+        });
+      }.bind(this));
   },
 
   componentWillMount: function () {
-
     this.fetchUsers();
     setInterval(this.fetchUsers, 3000);
 
@@ -181,7 +114,10 @@ var AppComponent = React.createClass({
   },
 
   onSubmit: function (body) {
-    // call API...
+    API.sendMessage(body, this.state.currentUser)
+      .then(function (json) {
+        console.log(json);
+      }.bind(this));
   },
 
   render: function () {
